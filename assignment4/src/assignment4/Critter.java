@@ -14,6 +14,7 @@ package assignment4;
 
 
 import java.util.List;
+import java.util.Random;
 
 /* see the PDF for descriptions of the methods and fields in this class
  * you may add fields, methods or inner classes to Critter ONLY if you make your additions private
@@ -62,7 +63,7 @@ public abstract class Critter {
 
 	public abstract void doTimeStep();
 	public abstract boolean fight(String oponent);
-	
+
 	/**
 	 * create and initialize a Critter subclass.
 	 * critter_class_name must be the unqualified name of a concrete subclass of Critter, if not,
@@ -74,6 +75,25 @@ public abstract class Critter {
 	 * @throws InvalidCritterException
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
+
+		try{
+			Class c = Class.forName(critter_class_name);
+			Critter creature = (Critter) c.newInstance();
+			creature.x_coord = getRandomInt(Params.world_width);
+			creature.y_coord = getRandomInt(Params.world_height);
+			creature.energy = Params.start_energy;
+			population.add(creature);
+		}
+		catch(ClassNotFoundException cnfe){
+			throw new InvalidCritterException(critter_class_name);
+		}
+		catch(IllegalAccessException iae){
+			throw new InvalidCritterException(critter_class_name);
+		}
+		catch(InstantiationException ie){
+			throw new InvalidCritterException(critter_class_name);
+		}
+
 	}
 	
 	/**
