@@ -12,6 +12,9 @@ package assignment4;
  * Fall 2016
  */
 
+import org.omg.CORBA.DynAnyPackage.Invalid;
+
+import java.util.List;
 import java.util.Scanner;
 import java.io.*;
 
@@ -69,11 +72,106 @@ public class Main {
 
         /* Do not alter the code above for your submission. */
         /* Write your code below. */
-        
-        // System.out.println("GLHF");
-        
+
+        String input = kb.nextLine();
+        String[] command = input.split(" ");
+
+        switch (command[0]) {
+            case "quit":{
+                if (command.length > 1){
+                    System.out.println("Invalid Input");
+                }
+                else{
+                    System.exit(0);
+                }
+            }
+
+            case "show":{
+                if (command.length > 1){
+                    System.out.println("Invalid Input");
+                }
+                else{
+                    Critter.displayWorld();
+                }
+            }
+
+            case "step":{
+                if (command.length > 2){
+                    System.out.println("Invalid Input");
+                }
+                else {
+                    if (command.length == 1){
+                        Critter.worldTimeStep();
+                    }
+                    else {
+                        int count = Integer.parseInt(command[1]);
+                        for(int i = 0; i < count; i++){
+                            Critter.worldTimeStep();
+                        }
+                    }
+                }
+            }
+
+            case "seed":{
+                if (command.length > 2){
+                    System.out.println("Invalid Input");
+                }
+                else {
+                    int seed = Integer.parseInt(command[1]);
+                    Critter.setSeed(seed);
+                    }
+            }
+
+            case "make":{
+                if (command.length > 3 || command.length == 1) {
+                    System.out.println("Invalid Input");
+                }
+                else {
+                    if (command.length == 2){
+                        try {
+                            Critter.makeCritter(command[1]);
+                        }
+                        catch (InvalidCritterException ice) {
+                            System.out.println("Invalid Critter Name");
+                        }
+                    }
+                    else {
+                        int numCritters = (int) Integer.parseInt(command[2]);
+                        for(int i = 0; i < numCritters; numCritters++) {
+                            try {
+                                Critter.makeCritter(command[1]);
+                            }
+                            catch (InvalidCritterException ice) {
+                                System.out.println("Invalid Critter Name");
+                            }
+                        }
+                    }
+                }
+            }
+
+            case "stats": {
+                if (command.length > 2){
+                    System.out.println("Invalid Input");
+                }
+
+                // invoking get instance
+                try {
+
+                    List<Critter> sameCritters = Critter.getInstances(command[1]);
+
+
+
+                }
+                catch (InvalidCritterException ice) {
+                    System.out.println("Invalid Critter Name");
+                }
+
+            }
+
+        }
+
+
         /* Write your code above */
         System.out.flush();
-
     }
 }

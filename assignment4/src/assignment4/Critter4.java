@@ -12,8 +12,7 @@ public class Critter4 extends Critter.TestCritter {
 
     @Override
     public boolean fight(String opponent) {
-        if (getEnergy() > 10) return true;
-        return false;
+        return true;
     }
 
     public String toString() {

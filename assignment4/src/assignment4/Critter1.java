@@ -17,8 +17,26 @@ public class Critter1 extends Critter.TestCritter {
 
     @Override
     public boolean fight(String opponent) {
-        if (getEnergy() > 10) return true;
-        return false;
+        if (opponent.equals("@")){
+            return true;
+        }
+
+        if (!hasMoved) {
+            if (getEnergy() > 50) return true;
+
+            else {
+                walk(getRandomInt(8));
+                return false;
+            }
+        }
+        else {
+            if (getEnergy() > 50) return true;
+
+            else {
+                this.setEnergy(this.getEnergy() - Params.walk_energy_cost);
+                return false;
+            }
+        }
     }
 
     public String toString() {

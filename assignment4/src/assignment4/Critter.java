@@ -16,6 +16,8 @@ package assignment4;
 import java.util.List;
 import java.util.Random;
 
+import static java.lang.Math.ceil;
+
 /* see the PDF for descriptions of the methods and fields in this class
  * you may add fields, methods or inner classes to Critter ONLY if you make your additions private
  * no new public, protected or default-package code or data can be added to Critter
@@ -42,8 +44,7 @@ public abstract class Critter {
 	public static void setSeed(long new_seed) {
 		rand = new java.util.Random(new_seed);
 	}
-	
-	
+
 	// A one-character long string that visually depicts your critter in the ASCII interface */
 	public String toString() { return ""; }
 
@@ -54,8 +55,8 @@ public abstract class Critter {
 	// Data
 	private int x_coord;
 	private int y_coord;
-	private boolean hasMoved;
-	private boolean fighting;
+	public boolean hasMoved;
+	//private boolean fighting;
 
 
 	/** Moves critter one spot in given direction, 0-7.
@@ -77,7 +78,7 @@ public abstract class Critter {
 			this.hasMoved = true;		// raises the flag
 		}
 
-		this.energy -= Params.walk_energy_cost;     // deduct energy cost
+		this.energy -= Params.run_energy_cost;     // deduct energy cost
 	}
 
     protected final void move( int direction, int steps) {
@@ -120,8 +121,75 @@ public abstract class Critter {
 
     }
 
+    public boolean isOccupied(int x, int y){
+		for (Critter c : population){
+			if (c.x_coord == x && c.y_coord == y){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	
 	protected final void reproduce(Critter offspring, int direction) {
+
+		// check if enough energy
+		if(this.energy < Params.min_reproduce_energy){
+			return;
+		}
+
+		offspring.energy = this.energy / 2;
+		this.energy = (int) Math.ceil(this.energy / 2);
+
+		switch (direction) {
+			case 0: //move east (step) units
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord;
+
+			case 1: //move northeast (step) units
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord - 1;
+
+			case 2: //move north (step) units
+				offspring.x_coord = this.x_coord;
+				offspring.y_coord = this.y_coord - 1;
+
+			case 3: //move northwest (step) units
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord - 1;
+
+			case 4: //move west (step) units
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord;
+
+			case 5: //move southwest (step) units
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord + 1;
+
+			case 6: //move south (step) units
+				offspring.x_coord = this.x_coord;
+				offspring.y_coord = this.y_coord + 1; ;
+
+			case 7: //southeast (step) units
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord + 1;
+		}
+
+		// Wrap-around correction
+		if (offspring.x_coord < 0)
+			offspring.x_coord += Params.world_width;
+
+		if (offspring.x_coord >= Params.world_width)
+			offspring.x_coord = Params.world_width % offspring.x_coord;
+
+		if (offspring.y_coord < 0)
+			offspring.y_coord += Params.world_height;
+
+		if (offspring.y_coord >= Params.world_height)
+			offspring.y_coord = Params.world_height % offspring.y_coord;
+
+		// add to list of babies
+		babies.add(offspring);
 	}
 
 	public abstract void doTimeStep();
@@ -274,10 +342,11 @@ public abstract class Critter {
 	}
 	
 	public static void displayWorld() {
-		// 1. Print Top\
+		// 1. Print Top
 		printTopOrBottom();
 
 		// 2. Print Middle
+		printMiddle();
 
 		// 3. Print Bottom
 		printTopOrBottom();
@@ -290,6 +359,28 @@ public abstract class Critter {
 			System.out.print("-");
 		}
 		System.out.println("+");
+	}
+
+	public static void printMiddle() {
+		for(int i = 0; i < Params.world_height; i++){
+			System.out.print("|");
+
+			// check the spaces for critters; if not critter print space
+			for(int j = 0; j < Params.world_width; j++){
+
+				for(Critter c : population){
+					if(c.x_coord == j && c.y_coord == i){
+						System.out.print(c.toString());
+					}
+					else{
+						System.out.print(" ");
+					}
+				}
+
+			}
+
+			System.out.println("|");
+		}
 	}
 }
 
