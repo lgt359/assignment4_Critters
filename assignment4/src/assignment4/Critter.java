@@ -31,32 +31,95 @@ public abstract class Critter {
 	static {
 		myPackage = Critter.class.getPackage().toString().split(" ")[1];
 	}
-	
+
+	// Returns a randomly generated integer
 	private static java.util.Random rand = new java.util.Random();
 	public static int getRandomInt(int max) {
 		return rand.nextInt(max);
 	}
-	
+
+	// Gets a random seed
 	public static void setSeed(long new_seed) {
 		rand = new java.util.Random(new_seed);
 	}
 	
 	
-	/* a one-character long string that visually depicts your critter in the ASCII interface */
+	// A one-character long string that visually depicts your critter in the ASCII interface */
 	public String toString() { return ""; }
-	
+
+	// Returns energy
 	private int energy = 0;
 	protected int getEnergy() { return energy; }
-	
+
+	// Data
 	private int x_coord;
 	private int y_coord;
-	
+	private boolean hasMoved;
+	private boolean fighting;
+
+
+	/** Moves critter one spot in given direction, 0-7.
+     *  Deducts energy cost from critter's current energy state.
+	 * @param direction
+	 */
 	protected final void walk(int direction) {
+        if (!this.hasMoved) {
+			move(direction, 1);
+			this.hasMoved = true;		// raises the flag
+        }
+
+		this.energy -= Params.walk_energy_cost;     // deduct energy cost
 	}
 	
 	protected final void run(int direction) {
-		
+		if (!this.hasMoved) {
+			move(direction, 2);
+			this.hasMoved = true;		// raises the flag
+		}
+
+		this.energy -= Params.walk_energy_cost;     // deduct energy cost
 	}
+
+    protected final void move( int direction, int steps) {
+
+        switch (direction) {
+            case 0: //move east (step) units
+                x_coord += steps;
+            case 1: //move northeast (step) units
+                x_coord += steps;
+                y_coord -= steps;
+            case 2: //move north (step) units
+                y_coord -= steps;
+            case 3: //move northwest (step) units
+                x_coord -= steps;
+                y_coord -= steps;
+            case 4: //move west (step) units
+                x_coord -= steps;
+            case 5: //move southwest (step) units
+                x_coord -= steps;
+				y_coord += steps;
+            case 6: //move south (step) units
+                y_coord += steps; ;
+            case 7: //southeast (step) units
+                x_coord += steps;
+				y_coord += steps;
+		}
+
+		// Wrap-around correction
+		if (x_coord < 0)
+			x_coord += Params.world_width;
+
+		if (x_coord >= Params.world_width)
+			x_coord = Params.world_width % x_coord;
+
+		if (y_coord < 0)
+			y_coord += Params.world_height;
+
+		if (y_coord >= Params.world_height)
+			y_coord = Params.world_height % y_coord;
+
+    }
+
 	
 	protected final void reproduce(Critter offspring, int direction) {
 	}
@@ -76,24 +139,21 @@ public abstract class Critter {
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
 
-		try{
+		try {
+			// create new critter
 			Class c = Class.forName(critter_class_name);
-			Critter creature = (Critter) c.newInstance();
-			creature.x_coord = getRandomInt(Params.world_width);
-			creature.y_coord = getRandomInt(Params.world_height);
-			creature.energy = Params.start_energy;
-			population.add(creature);
-		}
-		catch(ClassNotFoundException cnfe){
-			throw new InvalidCritterException(critter_class_name);
-		}
-		catch(IllegalAccessException iae){
-			throw new InvalidCritterException(critter_class_name);
-		}
-		catch(InstantiationException ie){
-			throw new InvalidCritterException(critter_class_name);
-		}
+			Critter newCritter = (Critter) c.newInstance();
+			population.add(newCritter);
 
+			// initialize critter  values
+			newCritter.x_coord = getRandomInt(Params.world_width);
+			newCritter.y_coord = getRandomInt(Params.world_height);
+			newCritter.energy = Params.start_energy;
+
+		}
+		catch(InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			throw new InvalidCritterException(critter_class_name);
+		}
 	}
 	
 	/**
@@ -103,8 +163,25 @@ public abstract class Critter {
 	 * @throws InvalidCritterException
 	 */
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
-		List<Critter> result = new java.util.ArrayList<Critter>();
-	
+        List<Critter> result = new java.util.ArrayList<Critter>();
+
+        // Initialize and get critter class
+		Class<?> critter = null;
+		try {
+		    // get class object corresponding to critter class name
+		    critter = Class.forName(critter_class_name);
+		}
+		catch (ClassNotFoundException cnfe) {
+		    throw new InvalidCritterException(critter_class_name);
+		}
+
+		// add critters to result
+		for (Critter c : population) {
+		    if (critter.isInstance(c)) {
+		        result.add(c);
+		    }
+		}
+
 		return result;
 	}
 	
@@ -188,7 +265,8 @@ public abstract class Critter {
 	 * Clear the world of all critters, dead and alive
 	 */
 	public static void clearWorld() {
-		// Complete this method.
+        population.clear();
+        babies.clear();
 	}
 	
 	public static void worldTimeStep() {
@@ -196,6 +274,23 @@ public abstract class Critter {
 	}
 	
 	public static void displayWorld() {
-		// Complete this method.
+		// 1. Print Top\
+		printTopOrBottom();
+
+		// 2. Print Middle
+
+		// 3. Print Bottom
+		printTopOrBottom();
+	}
+
+
+	public static void printTopOrBottom() {
+		System.out.print("+");
+		for (int i = 0; i < Params.world_width; i++) {
+			System.out.print("-");
+		}
+		System.out.println("+");
 	}
 }
+
+
