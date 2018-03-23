@@ -1,20 +1,21 @@
-package assignment4;
 /* CRITTERS Critter.java
  * EE422C Project 4 submission by
  * Replace <...> with your actual data.
- * <Student1 Name>
- * <Student1 EID>
- * <Student1 5-digit Unique No.>
- * <Student2 Name>
- * <Student2 EID>
- * <Student2 5-digit Unique No.>
- * Slip days used: <0>
- * Fall 2016
+ * Lorrie Tria
+ * LGT359
+ * Quoc Truong
+ * QT526
+ *
+ * Spring 2018
  */
 
+package assignment4;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static java.lang.Math.ceil;
 
 /* see the PDF for descriptions of the methods and fields in this class
  * you may add fields, methods or inner classes to Critter ONLY if you make your additions private
@@ -42,8 +43,7 @@ public abstract class Critter {
 	public static void setSeed(long new_seed) {
 		rand = new java.util.Random(new_seed);
 	}
-	
-	
+
 	// A one-character long string that visually depicts your critter in the ASCII interface */
 	public String toString() { return ""; }
 
@@ -55,8 +55,7 @@ public abstract class Critter {
 	private int x_coord;
 	private int y_coord;
 	private boolean hasMoved;
-	private boolean fighting;
-
+	private boolean tryingToRun;
 
 	/** Moves critter one spot in given direction, 0-7.
      *  Deducts energy cost from critter's current energy state.
@@ -70,58 +69,211 @@ public abstract class Critter {
 
 		this.energy -= Params.walk_energy_cost;     // deduct energy cost
 	}
-	
+
+	/** Moves critter two spots in given direction, 0-7.
+	 * Deducts energy cost fromt critter's current energy state.
+	 * @param direction
+	 */
 	protected final void run(int direction) {
 		if (!this.hasMoved) {
-			move(direction, 2);
-			this.hasMoved = true;		// raises the flag
+			if(tryingToRun){
+				runAway();
+			}
+			else {
+				move(direction, 2);
+				this.hasMoved = true;		// raises the flag
+			}
 		}
 
-		this.energy -= Params.walk_energy_cost;     // deduct energy cost
+		this.energy -= Params.run_energy_cost;     // deduct energy cost
 	}
 
-    protected final void move( int direction, int steps) {
+	/** Checks if critter's run away position is occupied by another.
+	 *  Critter always runs away towards the right (direction 0)
+	 *  If occupied, critter can not run away.
+	 *  If not occupied, updates critter's position.
+	 */
+	private final void runAway() {
+		boolean isOccupied = false;
+
+		if (!this.hasMoved) {
+
+			int x_new_coord = this.x_coord + 2;
+
+			if (x_new_coord >= Params.world_width){
+				x_new_coord = Params.world_width % x_coord;
+			}
+
+			for (Critter c : population) {
+				if ((x_new_coord == c.x_coord) && (this.y_coord == c.y_coord)) {
+					isOccupied = true;
+					break;
+				}
+			}
+
+			if (!isOccupied) {
+				move(0, 2);
+			}
+			this.hasMoved = true;		// raises the flag
+		}
+	}
+
+
+	/** Moves critter in given direction and steps
+	 * @param direction 0-7, representing where to move critter
+	 * @param steps int tha represents how many steps critter takes
+	 */
+    private void move( int direction, int steps) {
 
         switch (direction) {
-            case 0: //move east (step) units
-                x_coord += steps;
-            case 1: //move northeast (step) units
-                x_coord += steps;
-                y_coord -= steps;
-            case 2: //move north (step) units
-                y_coord -= steps;
-            case 3: //move northwest (step) units
-                x_coord -= steps;
-                y_coord -= steps;
-            case 4: //move west (step) units
-                x_coord -= steps;
-            case 5: //move southwest (step) units
-                x_coord -= steps;
+            case 0: {            // move east (step) units
+				x_coord += steps;
+				break;
+			}
+
+            case 1: {            // move northeast (step) units
+				x_coord += steps;
+				y_coord -= steps;
+				break;
+			}
+
+            case 2: {            // move north (step) units
+				y_coord -= steps;
+				break;
+			}
+
+            case 3: {            // move northwest (step) units
+				x_coord -= steps;
+				y_coord -= steps;
+				break;
+			}
+
+            case 4: {            // move west (step) units
+				x_coord -= steps;
+				break;
+			}
+
+            case 5: {            // move southwest (step) units
+				x_coord -= steps;
 				y_coord += steps;
-            case 6: //move south (step) units
-                y_coord += steps; ;
-            case 7: //southeast (step) units
-                x_coord += steps;
+				break;
+			}
+
+            case 6: {            // move south (step) units
 				y_coord += steps;
+				break;
+			}
+
+            case 7: {            // southeast (step) units
+				x_coord += steps;
+				y_coord += steps;
+				break;
+			}
 		}
 
-		// Wrap-around correction
-		if (x_coord < 0)
+		// Fixes wrap around coordinates
+		if (x_coord < 0) {
 			x_coord += Params.world_width;
+		}
 
-		if (x_coord >= Params.world_width)
+		if (x_coord >= Params.world_width) {
 			x_coord = Params.world_width % x_coord;
+		}
 
-		if (y_coord < 0)
+		if (y_coord < 0) {
 			y_coord += Params.world_height;
+		}
 
-		if (y_coord >= Params.world_height)
+		if (y_coord >= Params.world_height) {
 			y_coord = Params.world_height % y_coord;
-
+		}
     }
 
-	
+	/** Adds new offspring critter to world
+	 * @param offspring New Critter that we are adding
+	 * @param direction the direction where we place new critter in reference to parent's position
+	 */
 	protected final void reproduce(Critter offspring, int direction) {
+
+		// check if critter has enough energy to reproduce
+		if(this.energy < Params.min_reproduce_energy){
+			return;
+		}
+
+		// initialize energy levels
+		offspring.energy = this.energy / 2;					// half of parent's energy
+		this.energy = (int) Math.ceil(this.energy / 2);
+
+		switch (direction) {
+			case 0: {
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord;
+				break;
+			}
+
+			case 1: {
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord - 1;
+				break;
+			}
+
+			case 2: {
+				offspring.x_coord = this.x_coord;
+				offspring.y_coord = this.y_coord - 1;
+				break;
+			}
+
+			case 3: {
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord - 1;
+				break;
+			}
+
+			case 4: {
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord;
+				break;
+			}
+
+			case 5: {
+				offspring.x_coord = this.x_coord - 1;
+				offspring.y_coord = this.y_coord + 1;
+				break;
+			}
+
+			case 6: {
+				offspring.x_coord = this.x_coord;
+				offspring.y_coord = this.y_coord + 1;
+				;
+				break;
+			}
+
+			case 7: {
+				offspring.x_coord = this.x_coord + 1;
+				offspring.y_coord = this.y_coord + 1;
+				break;
+			}
+		}
+
+		// Fixes wrap around coordinate
+		if (offspring.x_coord < 0) {
+			offspring.x_coord += Params.world_width;
+		}
+
+		if (offspring.x_coord >= Params.world_width) {
+			offspring.x_coord = Params.world_width % offspring.x_coord;
+		}
+
+		if (offspring.y_coord < 0) {
+			offspring.y_coord += Params.world_height;
+		}
+
+		if (offspring.y_coord >= Params.world_height) {
+			offspring.y_coord = Params.world_height % offspring.y_coord;
+		}
+
+		// add to list of babies
+		babies.add(offspring);
 	}
 
 	public abstract void doTimeStep();
@@ -141,7 +293,7 @@ public abstract class Critter {
 
 		try {
 			// create new critter
-			Class c = Class.forName(critter_class_name);
+			Class<?> c = Class.forName(myPackage + "." + critter_class_name);
 			Critter newCritter = (Critter) c.newInstance();
 			population.add(newCritter);
 
@@ -163,13 +315,13 @@ public abstract class Critter {
 	 * @throws InvalidCritterException
 	 */
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
-        List<Critter> result = new java.util.ArrayList<Critter>();
+        List<Critter> result = new ArrayList<Critter>();
 
-        // Initialize and get critter class
+		// Initialize and get critter class
 		Class<?> critter = null;
 		try {
 		    // get class object corresponding to critter class name
-		    critter = Class.forName(critter_class_name);
+			critter = Class.forName(myPackage + "." + critter_class_name);
 		}
 		catch (ClassNotFoundException cnfe) {
 		    throw new InvalidCritterException(critter_class_name);
@@ -268,29 +420,168 @@ public abstract class Critter {
         population.clear();
         babies.clear();
 	}
-	
+
+
+	/** Steps for simulating the world time step.
+	 * 1. Invoke doTimeStep for all critters
+	 * 2. Resolve and check for encounters between critters
+	 * 3. Deduct rest energy from each critter
+	 * 4. Produce Algae
+	 * 5. Erase all dead critters from population
+	 * 6. Add all babies to population
+	 * 7. Reset all flags
+	 */
 	public static void worldTimeStep() {
-		// Complete this method.
+
+		// 1. Invoke doTimeStep for all critters in population
+		for (Critter c : population){
+			c.doTimeStep();		// hasMoved is set to true
+		}
+
+		// 2. Check for encounters
+		for (Critter first : population) {
+			for (Critter second : population) {
+
+				// same critters, don't need to check
+				if (first == second){
+					continue;
+				}
+
+				// if one critter is dead, continue loop
+				if(first.energy <= 0 || second.energy <= 0){
+					continue;
+				}
+
+				// check if same coordinate
+				if(first.x_coord == second.x_coord && first.y_coord == second.y_coord){
+
+					// encounter!!!!
+					first.tryingToRun = true;
+					second.tryingToRun = true;
+
+					// Initialize dice
+					int first_dice = 0;
+					int second_dice = 0;
+
+					// check who wants to fight
+					if (first.fight(second.toString())) {
+						first_dice = getRandomInt(first.energy);
+					}
+					if (second.fight(first.toString())) {
+						second_dice = getRandomInt(second.energy);
+					}
+
+					// check if one ran away
+					if(!(first.x_coord == second.x_coord && first.y_coord == second.y_coord)){
+						continue;
+					}
+
+					// first critter wins, if ties choose first critter
+					if (first_dice >= second_dice) {
+						first.energy += second.energy/2;
+						second.energy = 0;
+					}
+
+					// second critter wins
+					else {
+						second.energy += first.energy/2;
+						first.energy = 0;
+					}
+
+				}
+			}
+		}
+
+		// 3. Deduct the rest energy
+		for(Critter c : population) {
+			c.energy -= Params.rest_energy_cost;
+		}
+
+		// 4. Add algae
+		for (int i = 0; i < Params.refresh_algae_count; i+=1) {
+			try {
+				makeCritter("Algae");
+			}
+			catch (InvalidCritterException ice) {
+				System.out.println("error processing: Algae");
+			}
+		}
+
+		// 5. Remove dead critters
+		List<Critter> deadCritters = new ArrayList<Critter>();
+
+		for(Critter c : population) {
+			if (c.energy <= 0) {
+				deadCritters.add(c);
+			}
+		}
+		population.removeAll(deadCritters);
+
+		// 6. add babies to population
+		population.addAll(babies);
+		babies.clear();
+
+		// 7. Reset all flags
+		for (Critter c: population) {
+			c.hasMoved = false;
+			c.tryingToRun = false;
+		}
 	}
-	
+
+	/**
+	 * Displays current frame of 2-D simulated world
+	 */
 	public static void displayWorld() {
-		// 1. Print Top\
 		printTopOrBottom();
-
-		// 2. Print Middle
-
-		// 3. Print Bottom
+		printMiddle();
 		printTopOrBottom();
 	}
 
 
-	public static void printTopOrBottom() {
+	/**
+	 * Prints Top/Bottom border of frame
+	 */
+	private static void printTopOrBottom() {
 		System.out.print("+");
 		for (int i = 0; i < Params.world_width; i++) {
 			System.out.print("-");
 		}
 		System.out.println("+");
 	}
+
+	/**
+	 * Prints middle section of frame
+	 * Consists of critters printed at their corresponding coordinates
+	 * If no critter lies at coordinate, prints " "
+	 */
+	private static void printMiddle() {
+		for(int i = 0; i < Params.world_height; i++){
+			System.out.print("|");
+
+			for(int j = 0; j < Params.world_width; j++){
+				boolean isPrinted = false;				// helper flag to print " "
+
+				if(population.isEmpty()){
+					System.out.print(" ");
+					continue;
+				}
+
+				// check if critter lies on coordinates
+				for(Critter c : population){
+					if(c.x_coord == j && c.y_coord == i){
+						System.out.print(c.toString());
+						isPrinted = true;
+						break;
+					}
+				}
+
+				// if flag is false, no critter occupies space
+				if(!isPrinted) {
+					System.out.print(" ");
+				}
+			}
+
+			System.out.println("|");
+		}
+	}
 }
-
-

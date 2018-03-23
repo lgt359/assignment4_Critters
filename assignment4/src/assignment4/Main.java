@@ -1,17 +1,18 @@
-package assignment4;
-/* CRITTERS Main.java
+/* CRITTERS Critter.java
  * EE422C Project 4 submission by
- * Replace <...> with your actual data.
- * <Student1 Name>
- * <Student1 EID>
- * <Student1 5-digit Unique No.>
- * <Student2 Name>
- * <Student2 EID>
- * <Student2 5-digit Unique No.>
- * Slip days used: <0>
- * Fall 2016
+ * Lorrie Tria
+ * LGT359
+ * Quoc Truong
+ * QT526
+ *
+ * Spring 2018
  */
 
+package assignment4;
+
+import org.omg.CORBA.DynAnyPackage.Invalid;
+
+import java.util.List;
 import java.util.Scanner;
 import java.io.*;
 
@@ -69,11 +70,134 @@ public class Main {
 
         /* Do not alter the code above for your submission. */
         /* Write your code below. */
-        
-        // System.out.println("GLHF");
-        
+
+        boolean loop = true;
+        do {
+            String input = kb.nextLine();
+            String[] command = input.split(" ");
+
+            switch (command[0]) {
+                case "quit": {
+                    if (command.length > 1) {
+                        System.out.println("error processing: " + input);
+                    } else {
+                        loop = false;
+                        break;
+                    }
+                }
+
+                case "show": {
+                    if (command.length > 1) {
+                        System.out.println("error processing: " + input);
+                    } else {
+                        Critter.displayWorld();
+                    }
+
+                    continue;
+                }
+
+
+                case "step": {
+                    if (command.length > 2) {
+                        System.out.println("error processing: " + input);
+                    } else {
+                        if (command.length == 1) {
+                            Critter.worldTimeStep();
+                        } else {
+                            try {
+                                int count = Integer.parseInt(command[1]);
+                                for (int i = 0; i < count; i++) {
+                                    Critter.worldTimeStep();
+                                }
+                            }
+                            catch (NumberFormatException nfe){
+                                System.out.println("error processing: " + input);
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+
+                case "seed": {
+                    if (command.length > 2) {
+                        System.out.println("error processing: " + input);
+                    } else {
+                        try {
+                            int seed = Integer.parseInt(command[1]);
+                            Critter.setSeed(seed);
+                        }
+                        catch (NumberFormatException | IndexOutOfBoundsException e){
+                            System.out.println("error processing: " + input);
+                        }
+
+                    }
+                    continue;
+                }
+
+                case "make": {
+                    if (command.length > 3 || command.length == 1) {
+                        System.out.println("error processing: " + input);
+                    } else {
+                        if (command.length == 2) {
+                            try {
+                                Critter.makeCritter(command[1]);
+                            } catch (InvalidCritterException ice) {
+                                System.out.println("error processing: " + input);
+                            }
+                        } else {
+                            int numCritters = 0;
+
+                            try {
+                                numCritters = (int) Integer.parseInt(command[2]);
+                            } catch (NumberFormatException nfe) {
+                                System.out.println("error processing: " + input);
+                            }
+
+                            for (int i = 0; i < numCritters; i++) {
+                                try {
+                                    Critter.makeCritter(command[1]);
+                                } catch (InvalidCritterException ice) {
+                                    System.out.println("error processing: " + input);
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                case "stats": {
+
+                    if(command.length > 2 || command.length == 1)
+                        System.out.println("error processing: " + input);
+                    else
+                    {
+                        try{
+
+                            List<Critter> list = Critter.getInstances(command[1]);                      // list is a list of all critters of specific type, command[1]
+                            Class <?> c = Class.forName(myPackage + "." + command[1]);                  // c = name of Critter (Craig, Algae, etc)
+
+                            // stats gets <Critter>.runStats
+                            java.lang.reflect.Method stats = c.getMethod("runStats", java.util.List.class);
+
+                            //invokes the underlying method, which in this case is <Critter>.runStats
+                            stats.invoke(c, list);
+                        }
+                        catch(Exception e)
+                        {
+                            System.out.println("error processing: " + input);
+                        }
+                    }
+                    continue;
+                }
+
+                default: {
+                    System.out.println("invalid command: " + input);
+                }
+            }
+
+        } while(loop);
         /* Write your code above */
         System.out.flush();
-
     }
 }
