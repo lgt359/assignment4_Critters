@@ -75,7 +75,7 @@ public abstract class Critter {
 	 */
 	protected final void run(int direction) {
 		if (!this.hasMoved) {
-			if(tryingToRun = true){
+			if(tryingToRun){
 				runAway();
 			}
 			else {
